@@ -1,0 +1,20 @@
+{% extends 'main.html'%}
+{% load static %}
+{% block content %}
+
+<div class="d-flex justify-content-center">
+<div class="w-50 p-3 card">
+    <img class="thumbnail img-size rounded" src="{{product.imageURL}}">
+    <div class="box-element product">
+        <h6><strong>{{product.name}}</strong></h6>
+        <hr>
+
+        <button data-product={{product.id}} data-action="add"  class="btn btn-outline-secondary add-btn update-cart">Add to Cart</button>
+        <h4 style="display: inline-block; float: right"><strong>${{product.price|floatformat:2}}</strong></h4>
+
+    </div>
+  
+</div>
+</div>
+
+{% endblock content%}

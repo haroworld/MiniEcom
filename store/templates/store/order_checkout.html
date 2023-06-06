@@ -1,0 +1,156 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block content %}
+
+	
+     <div class="row">
+		<div class="col-lg-6">
+			<div class="box-element" id="form-wrapper">
+				<form id="form" class="">
+					<div id="user-info">
+						<div class="form-field">
+							<h3>{{request.user.customer}}</h3>
+						</div>
+					</div>
+					
+					<div id="shipping-info">
+						<hr>
+						<p>Shipping Information:</p>
+						<hr>
+						<div class="form-field">
+							<input class="form-control" type="text" name="address" placeholder="Address..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="city" placeholder="City..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="state" placeholder="State..">
+						</div>
+						<div class="form-field">
+							<input class="form-control" type="text" name="zipcode" placeholder="Zip code..">
+						</div>
+						
+					</div>
+
+					
+					<input id="form-button" class="btn btn-success btn-block" type="submit" value="Continue">
+				</form>
+
+			</div>
+
+			<br>
+			<div class="box-element hidden" id="payment-info">
+				<small>Flutterwave Options</small>
+				<div id="paypal-button-container"></div>
+				<!--<button class="btn btn-success btn-block" id="make-payment">Make Payment</button>-->
+			</div>
+			
+		</div>
+
+		<div class="col-lg-6">
+			<div class="box-element">
+				<a  class="btn btn-outline-dark" href="{% url 'order' %}">&#x2190; Back to Cart</a>
+				<hr>
+				<h3>Order Summary</h3>
+				<hr>
+				{% for item in items %}
+				<div class="cart-row">
+					<div style="flex:2"><img class="row-image" src="{{item.product.imageURL}}"></div>
+					<div style="flex:2"><p>{{item.product.name}}</p></div>
+					<div style="flex:1"><p>${{item.product.price|floatformat:2}}</p></div>
+					<div style="flex:1"><p>x{{item.quantity}}</p></div>
+				</div>
+				{% endfor %}
+				<h5>Items:   {{order.get_order_quantity}}</h5>
+				<h5>Total:   ${{order.get_order_total|floatformat:2}}</h5>
+			</div>
+		</div>
+	</div>
+
+	<script src="https://www.paypal.com/sdk/js?client-id=AYE-89h75xVZrRl5HjPBAwxVPy-zYxOOUeMl0vwClnkgVs0MQwILh2LZ8GDXaB75KpNAdfLORuaIQkc6&currency=USD"></script>
+
+	<script>
+        // Render the PayPal button into #paypal-button-container
+        paypal.Buttons({
+
+            // Set up the transaction
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{
+                        amount: {
+                            value: '{{order.get_order_total|floatformat:2}}'
+                        }
+                    }]
+                });
+            },
+
+            // Finalize the transaction
+            onApprove: function(data, actions) {
+                return actions.order.capture().then(function(orderData) {
+                    // Successful capture! For demo purposes:
+                    console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+                    submitFormdata()
+                });
+            }
+
+
+        }).render('#paypal-button-container');
+    </script>
+
+	
+
+	<script type="text/javascript">
+		var form = document.getElementById('form')
+		var total = "{{order.get_order_total|floatformat:2}}"
+
+		form.addEventListener('submit', function(e){
+			e.preventDefault()
+			console.log('form submitted ....')
+			document.getElementById('form-button').classList.add('hidden')
+			document.getElementById('payment-info').classList.remove('hidden')
+		})
+
+		/*document.getElementById('make-payment').addEventListener('click', function(e){
+			submitFormdata()
+		})*/
+
+		function submitFormdata(){
+			var userFormData = {
+				'name':null,
+				'email':null,
+				'total':total,
+			}
+
+			var shippingInfo = {
+				'address':null,
+				'city':null,
+				'state':null,
+				'zipcode':null,
+			}
+
+			shippingInfo.address = form.address.value
+			shippingInfo.city = form.city.value
+			shippingInfo.state = form.state.value
+			shippingInfo.zipcode = form.zipcode.value
+
+			userFormData.name = form.name.value
+			userFormData.email = form.email.value
+
+			var url = '/process_order/'
+			fetch(url,{
+				method:'POST',
+				headers:{
+					'content-Type':'application/json',
+					'X-CSRFToken':csrftoken,
+				},
+				body:JSON.stringify({'form':userFormData, 'shipping':shippingInfo})
+			})
+			.then((response) => response.json())
+			.then((data) => {
+				console.log('success:', data);
+				alert('Transaction complete');
+				window.location.href = "{% url 'store' %}"
+			})
+		}
+	</script>
+{% endblock content %}
